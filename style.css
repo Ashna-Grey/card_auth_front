@@ -1,0 +1,48 @@
+body{
+font-family: Arial;
+background:#f5f5f5;
+text-align:center;
+}
+h1{
+margin-top:30px;
+}
+.upload-box{
+margin:30px;
+padding:20px;
+background:white;
+border-radius:8px;
+display:inline-block;
+box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+button{
+margin-top:10px;
+padding:10px 20px;
+border:none;
+background:#2b7cff;
+color:white;
+border-radius:5px;
+cursor:pointer;
+}
+button:hover{
+background:#1f5fd1;
+}
+table{
+margin:30px auto;
+border-collapse:collapse;
+width:80%;
+background:white;
+}
+th,td{
+padding:10px;
+border:1px solid #ddd;
+}
+th{
+background:#2b7cff;
+color:white;
+}
+.high{
+background:#ffdddd;
+}
+.medium{
+background:#fff0cc;
+}
