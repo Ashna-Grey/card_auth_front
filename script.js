@@ -1,11 +1,16 @@
 const backend = "https://card-auth-updated.onrender.com";
-
-// ══ MATRIX RAIN ════════════════════════════════════════════════════════
+let selectedFile = null;
+window.addEventListener("error", e => {
+  console.error("JS Error:", e.message, e.filename, e.lineno);
+});
+window.addEventListener("unhandledrejection", e => {
+  console.error("Unhandled promise:", e.reason);
+  toast && toast("Unexpected error: " + (e.reason?.message || e.reason), "error");
+});
 (function initMatrix() {
   const canvas = document.getElementById("matrixCanvas");
   const ctx    = canvas.getContext("2d");
   let cols, drops;
-
   function resize() {
     canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -14,9 +19,7 @@ const backend = "https://card-auth-updated.onrender.com";
   }
   resize();
   window.addEventListener("resize", resize);
-
-  const chars = "アイウエオカキクケコサシスセソ01フラウドデテクト";
-
+  const chars = "FRAUDDETECTRISK0123456789!#$@%^ALERTSCAN";
   setInterval(() => {
     ctx.fillStyle = "rgba(0,0,0,0.06)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -30,16 +33,12 @@ const backend = "https://card-auth-updated.onrender.com";
     });
   }, 55);
 })();
-
-// ══ CLOCK ══════════════════════════════════════════════════════════════
 function updateClock() {
   const n = new Date();
   document.getElementById("clock").textContent = n.toTimeString().slice(0,8);
 }
 setInterval(updateClock, 1000);
 updateClock();
-
-// ══ NAV ════════════════════════════════════════════════════════════════
 function showSection(id) {
   ["upload","schema","analysis","network","metrics"].forEach(s => {
     document.getElementById("sec-" + s).style.display = (s === id) ? "block" : "none";
@@ -48,8 +47,6 @@ function showSection(id) {
     btn.classList.toggle("active", btn.dataset.sec === id);
   });
 }
-
-// ══ TOAST ══════════════════════════════════════════════════════════════
 function toast(msg, type = "info") {
   const el = document.createElement("div");
   el.className = `toast toast-${type}`;
@@ -61,11 +58,8 @@ function toast(msg, type = "info") {
     setTimeout(() => el.remove(), 300);
   }, 3000);
 }
-
-// ══ FILE HANDLING ═══════════════════════════════════════════════════════
 const dropZone  = document.getElementById("dropZone");
 const fileInput = document.getElementById("fileInput");
-
 dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
 dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
 dropZone.addEventListener("drop", e => {
@@ -74,11 +68,14 @@ dropZone.addEventListener("drop", e => {
   if (e.dataTransfer.files[0]) handleFileSelect(e.dataTransfer.files[0]);
 });
 fileInput.addEventListener("change", () => { if (fileInput.files[0]) handleFileSelect(fileInput.files[0]); });
-
 function handleFileSelect(file) {
+  selectedFile = file;  // ALWAYS store globally — this is the single source of truth
   document.getElementById("fileName").textContent = file.name;
   document.getElementById("fileSize").textContent = fmtBytes(file.size);
   document.getElementById("fileInfo").style.display = "flex";
+  // Show filename in header bar too so user always knows what's loaded
+  document.title = "SENTINEL // " + file.name;
+  console.log("[SENTINEL] File stored:", file.name, "size:", file.size, "type:", file.type);
   toast("Dataset loaded: " + file.name, "success");
 }
 
@@ -89,13 +86,18 @@ function fmtBytes(b) {
 }
 
 function getFile() {
-  if (!fileInput.files.length) { toast("Upload a dataset first", "error"); return null; }
-  return fileInput.files[0];
+  if (!selectedFile) {
+    toast("Upload a dataset first — go to INGESTION tab", "error");
+    return null;
+  }
+  console.log("[SENTINEL] Using file:", selectedFile.name, "size:", selectedFile.size);
+  return selectedFile;
 }
 
 function mkFormData(file) {
   const fd = new FormData();
-  fd.append("file", file);
+  fd.append("file", file, file.name);  // pass filename explicitly
+  console.log("[SENTINEL] Sending file:", file.name, "bytes:", file.size);
   return fd;
 }
 
@@ -221,19 +223,37 @@ async function runAnalysis() {
   const btn = document.getElementById("analyzeBtn");
   btn.disabled = true;
   btn.textContent = "[ ⟳ SCANNING... ]";
+  showSection("analysis");
   showLoading();
 
   try {
     const res  = await fetch(`${backend}/analyze`, { method:"POST", body: mkFormData(file) });
+    console.log("[SENTINEL] Response status:", res.status);
     const data = await res.json();
-    if (data.error) { toast(data.error, "error"); hideLoading(); return; }
-    hideLoading();
+    console.log("[SENTINEL] Response data:", JSON.stringify(data).slice(0, 300));
+
+    if (data.error) {
+      toast("Backend error: " + data.error, "error");
+      clearInterval(loaderTimer);
+      document.getElementById("loadingState").style.display = "none";
+      return;
+    }
+
+    clearInterval(loaderTimer);
+    document.getElementById("progressFill").style.width = "100%";
+    document.getElementById("loadingState").style.display = "none";
+
+    const tblWrap = document.querySelector(".tbl-wrap");
+    if (tblWrap) tblWrap.style.display = "block";
+
     displayResults(data.suspicious_cards || []);
     document.getElementById("statsBar").style.display = "flex";
     toast(`Detection complete — ${(data.suspicious_cards||[]).length} threats found`, "success");
+
   } catch (e) {
     toast("Analysis failed: " + e.message, "error");
-    hideLoading();
+    clearInterval(loaderTimer);
+    document.getElementById("loadingState").style.display = "none";
   } finally {
     btn.disabled = false;
     btn.textContent = "[ ▶ RUN FRAUD DETECTION ]";
@@ -312,7 +332,9 @@ async function generateNetwork() {
 
   try {
     const res  = await fetch(`${backend}/fraud_network`, { method:"POST", body: mkFormData(file) });
+    console.log("[SENTINEL] Network response status:", res.status);
     const data = await res.json();
+    console.log("[SENTINEL] Network nodes:", (data.nodes||[]).length, "edges:", (data.edges||[]).length);
     graphData = data;
     renderGraph(data);
     toast("Network graph rendered", "success");
@@ -447,6 +469,7 @@ function renderGraph(data) {
 async function viewMetrics() {
   try {
     const res  = await fetch(`${backend}/metrics`);
+    if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     renderMetrics(data, false);
     toast("Metrics refreshed", "info");
@@ -503,4 +526,11 @@ function renderMetrics(data, isDash) {
 }
 
 // ══ INIT ══════════════════════════════════════════════════════════════════
-viewMetrics(); // auto-load metrics silently on startup
+// Auto-load metrics silently on startup (no toast)
+(async function initMetrics() {
+  try {
+    const res  = await fetch(`${backend}/metrics`);
+    const data = await res.json();
+    renderMetrics(data, false);
+  } catch (e) { /* silent fail on startup */ }
+})();
