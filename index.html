@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Card Fraud Detection</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>Card Fraud Detection System</h1>
+<div class="upload-box">
+<label>Upload Transaction Dataset (CSV)</label>
+<input type="file" id="fileInput" accept=".csv">
+<button onclick="analyze()">Analyze Transactions</button>
+</div>
+<div id="status"></div>
+<h2>Results</h2>
+<table id="resultTable">
+<thead>
+<tr>
+<th>Card Number</th>
+<th>Transactions</th>
+<th>Unique IPs</th>
+<th>Time Span (minutes)</th>
+<th>Risk Score</th>
+<th>Risk Level</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+<script src="script.js"></script>
+
+</body>
+</html>
