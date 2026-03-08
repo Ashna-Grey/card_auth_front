@@ -10,7 +10,7 @@ formData.append("file", file)
 document.getElementById("status").innerText = "Analyzing..."
 try{
 const response = await fetch(
-"https://card-auth-updated.onrender.com",
+"https://card-auth-updated.onrender.com/analyze",
 {
 method:"POST",
 body:formData
