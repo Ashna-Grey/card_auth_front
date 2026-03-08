@@ -1,401 +1,506 @@
 const backend = "https://card-auth-updated.onrender.com";
 
-// ========== MATRIX RAIN ==========
+// ══ MATRIX RAIN ════════════════════════════════════════════════════════
 (function initMatrix() {
   const canvas = document.getElementById("matrixCanvas");
-  const ctx = canvas.getContext("2d");
+  const ctx    = canvas.getContext("2d");
   let cols, drops;
 
   function resize() {
-    canvas.width = window.innerWidth;
+    canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
-    cols = Math.floor(canvas.width / 16);
+    cols  = Math.floor(canvas.width / 16);
     drops = Array(cols).fill(1);
   }
-
   resize();
   window.addEventListener("resize", resize);
 
-  const chars = "アイウエオカキクケコサシスセソタチツテトナニヌネノ01";
+  const chars = "アイウエオカキクケコサシスセソ01フラウドデテクト";
 
-  function draw() {
-    ctx.fillStyle = "rgba(2, 11, 14, 0.05)";
+  setInterval(() => {
+    ctx.fillStyle = "rgba(0,0,0,0.06)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#00ffe1";
+    ctx.fillStyle = "#00ff41";
     ctx.font = "13px Share Tech Mono";
     drops.forEach((y, i) => {
-      const char = chars[Math.floor(Math.random() * chars.length)];
-      ctx.fillText(char, i * 16, y * 16);
+      const ch = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(ch, i * 16, y * 16);
       if (y * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
       drops[i]++;
     });
-  }
-
-  setInterval(draw, 50);
+  }, 55);
 })();
 
-// ========== CLOCK ==========
+// ══ CLOCK ══════════════════════════════════════════════════════════════
 function updateClock() {
-  const now = new Date();
-  document.getElementById("clock").textContent =
-    now.toTimeString().slice(0, 8);
+  const n = new Date();
+  document.getElementById("clock").textContent = n.toTimeString().slice(0,8);
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// ========== TOAST ==========
+// ══ NAV ════════════════════════════════════════════════════════════════
+function showSection(id) {
+  ["upload","schema","analysis","network","metrics"].forEach(s => {
+    document.getElementById("sec-" + s).style.display = (s === id) ? "block" : "none";
+  });
+  document.querySelectorAll(".nav-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.sec === id);
+  });
+}
+
+// ══ TOAST ══════════════════════════════════════════════════════════════
 function toast(msg, type = "info") {
   const el = document.createElement("div");
   el.className = `toast toast-${type}`;
-  const icons = { success: "✓", error: "✕", info: "◈" };
-  el.innerHTML = `<span>${icons[type] || "◈"}</span><span>${msg}</span>`;
+  const icon = { success: "[ OK ]", error: "[ ERR ]", info: "[ // ]" };
+  el.innerHTML = `<span>${icon[type]||"[//]"}</span><span>${msg}</span>`;
   document.getElementById("toastContainer").appendChild(el);
   setTimeout(() => {
     el.style.animation = "toastOut 0.3s ease forwards";
     setTimeout(() => el.remove(), 300);
-  }, 3200);
+  }, 3000);
 }
 
-// ========== FILE HANDLING ==========
-const dropZone = document.getElementById("dropZone");
+// ══ FILE HANDLING ═══════════════════════════════════════════════════════
+const dropZone  = document.getElementById("dropZone");
 const fileInput = document.getElementById("fileInput");
 
-dropZone.addEventListener("dragover", e => {
-  e.preventDefault();
-  dropZone.classList.add("drag-over");
-});
-
+dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
 dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
-
 dropZone.addEventListener("drop", e => {
   e.preventDefault();
   dropZone.classList.remove("drag-over");
-  const file = e.dataTransfer.files[0];
-  if (file) handleFileSelect(file);
+  if (e.dataTransfer.files[0]) handleFileSelect(e.dataTransfer.files[0]);
 });
-
-fileInput.addEventListener("change", () => {
-  if (fileInput.files[0]) handleFileSelect(fileInput.files[0]);
-});
+fileInput.addEventListener("change", () => { if (fileInput.files[0]) handleFileSelect(fileInput.files[0]); });
 
 function handleFileSelect(file) {
-  const fi = document.getElementById("fileInfo");
   document.getElementById("fileName").textContent = file.name;
-  document.getElementById("fileSize").textContent = formatBytes(file.size);
-  fi.style.display = "flex";
-  toast(`Dataset loaded: ${file.name}`, "success");
+  document.getElementById("fileSize").textContent = fmtBytes(file.size);
+  document.getElementById("fileInfo").style.display = "flex";
+  toast("Dataset loaded: " + file.name, "success");
 }
 
-function formatBytes(bytes) {
-  if (bytes < 1024) return bytes + " B";
-  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
-  return (bytes / 1048576).toFixed(1) + " MB";
+function fmtBytes(b) {
+  if (b < 1024) return b + " B";
+  if (b < 1048576) return (b/1024).toFixed(1) + " KB";
+  return (b/1048576).toFixed(1) + " MB";
 }
 
 function getFile() {
-  if (fileInput.files.length === 0) {
-    toast("Upload a dataset first", "error");
-    return null;
-  }
+  if (!fileInput.files.length) { toast("Upload a dataset first", "error"); return null; }
   return fileInput.files[0];
 }
 
-function createFormData(file) {
+function mkFormData(file) {
   const fd = new FormData();
   fd.append("file", file);
   return fd;
 }
 
-// ========== LOADING STATE ==========
-const loaderMessages = [
-  "INITIALIZING NEURAL SCAN...",
-  "PARSING TRANSACTION VECTORS...",
-  "BUILDING FRAUD GRAPH...",
-  "RUNNING ISOLATION FOREST...",
-  "ANALYZING IP REPUTATION...",
-  "COMPUTING RISK SCORES...",
-  "CROSS-REFERENCING PATTERNS...",
-  "FINALIZING THREAT ASSESSMENT..."
-];
-
-let loaderInterval = null;
-let progressVal = 0;
-let loaderMsgIdx = 0;
-
-function showLoading() {
-  document.getElementById("loadingState").style.display = "block";
-  document.getElementById("tableWrap").style.display = "none";
-  document.getElementById("statsBar").style.display = "none";
-  progressVal = 0;
-  loaderMsgIdx = 0;
-
-  loaderInterval = setInterval(() => {
-    progressVal = Math.min(progressVal + Math.random() * 12, 92);
-    document.getElementById("progressFill").style.width = progressVal + "%";
-    if (Math.random() > 0.6 && loaderMsgIdx < loaderMessages.length - 1) {
-      loaderMsgIdx++;
-      document.getElementById("loaderText").textContent = loaderMessages[loaderMsgIdx];
-    }
-  }, 400);
-}
-
-function hideLoading() {
-  clearInterval(loaderInterval);
-  document.getElementById("progressFill").style.width = "100%";
-  setTimeout(() => {
-    document.getElementById("loadingState").style.display = "none";
-    document.getElementById("tableWrap").style.display = "block";
-  }, 400);
-}
-
-// ========== SCHEMA / INFO ==========
+// ══ SCHEMA ══════════════════════════════════════════════════════════════
 async function detectSchema() {
-  const file = getFile();
-  if (!file) return;
+  const file = getFile(); if (!file) return;
   const out = document.getElementById("schemaOutput");
-  out.innerHTML = '<span class="dim">// scanning schema...</span>';
+  out.innerHTML = '<span class="await">&gt; SCANNING SCHEMA...</span>';
   try {
-    const res = await fetch(`${backend}/detect_schema`, { method: "POST", body: createFormData(file) });
+    const res  = await fetch(`${backend}/detect_schema`, { method:"POST", body: mkFormData(file) });
     const data = await res.json();
-    out.textContent = JSON.stringify(data, null, 2);
+    out.innerHTML = renderSchemaTable(data);
     toast("Schema detected", "success");
   } catch (e) {
-    out.textContent = `// error: ${e.message}`;
+    out.innerHTML = `<span class="await">&gt; ERROR: ${e.message}</span>`;
     toast("Schema detection failed", "error");
   }
 }
 
+function renderSchemaTable(data) {
+  const cols = data.columns || {};
+  let html = `<p class="schema-section-title">&gt; COLUMN SCHEMA</p>`;
+  html += `<table class="info-table">
+    <thead><tr><th>COLUMN NAME</th><th>DATA TYPE</th><th>STATUS</th></tr></thead><tbody>`;
+  const required = ["card_number","transaction_time","ip_address"];
+  for (const [col, dtype] of Object.entries(cols)) {
+    const isReq = required.includes(col);
+    html += `<tr>
+      <td class="label-cell">${col}</td>
+      <td class="val-cell">${dtype}</td>
+      <td class="${isReq ? 'ok-cell' : 'val-cell'}">${isReq ? "[ REQUIRED ✓ ]" : "[ OPTIONAL ]"}</td>
+    </tr>`;
+  }
+  html += `</tbody></table>`;
+  if (data.row_count !== undefined) {
+    html += `<p style="margin-top:10px;font-size:10px;color:var(--text-muted);letter-spacing:0.12em">&gt; ROW COUNT: <span style="color:var(--green)">${data.row_count}</span></p>`;
+  }
+  return html;
+}
+
 async function datasetInfo() {
-  const file = getFile();
-  if (!file) return;
+  const file = getFile(); if (!file) return;
   const out = document.getElementById("schemaOutput");
-  out.innerHTML = '<span class="dim">// loading dataset info...</span>';
+  out.innerHTML = '<span class="await">&gt; LOADING DATASET INFO...</span>';
   try {
-    const res = await fetch(`${backend}/dataset_info`, { method: "POST", body: createFormData(file) });
+    const res  = await fetch(`${backend}/dataset_info`, { method:"POST", body: mkFormData(file) });
     const data = await res.json();
-    out.textContent = JSON.stringify(data, null, 2);
+    out.innerHTML = renderDatasetInfoTable(data);
     toast("Dataset info loaded", "success");
   } catch (e) {
-    out.textContent = `// error: ${e.message}`;
+    out.innerHTML = `<span class="await">&gt; ERROR: ${e.message}</span>`;
     toast("Failed to load dataset info", "error");
   }
 }
 
-// ========== ANALYSIS ==========
-async function runAnalysis() {
-  const file = getFile();
-  if (!file) return;
+function renderDatasetInfoTable(data) {
+  let html = `<p class="schema-section-title">&gt; DATASET OVERVIEW</p>`;
+  html += `<table class="info-table" style="margin-bottom:14px">
+    <thead><tr><th>PROPERTY</th><th>VALUE</th></tr></thead><tbody>
+    <tr><td class="label-cell">ROW COUNT</td><td class="val-cell">${data.row_count ?? "—"}</td></tr>
+    <tr><td class="label-cell">COLUMN COUNT</td><td class="val-cell">${data.column_count ?? "—"}</td></tr>
+    <tr><td class="label-cell">COLUMNS</td><td class="val-cell">${(data.columns||[]).join(" · ")}</td></tr>
+    </tbody></table>`;
 
+  if (data.dtypes) {
+    html += `<p class="schema-section-title">&gt; DATA TYPES</p>`;
+    html += `<table class="info-table" style="margin-bottom:14px"><thead><tr><th>COLUMN</th><th>TYPE</th></tr></thead><tbody>`;
+    for (const [k,v] of Object.entries(data.dtypes)) {
+      html += `<tr><td class="label-cell">${k}</td><td class="val-cell">${v}</td></tr>`;
+    }
+    html += `</tbody></table>`;
+  }
+
+  if (data.missing_values) {
+    html += `<p class="schema-section-title">&gt; MISSING VALUES</p>`;
+    html += `<table class="info-table"><thead><tr><th>COLUMN</th><th>MISSING</th><th>STATUS</th></tr></thead><tbody>`;
+    for (const [k,v] of Object.entries(data.missing_values)) {
+      html += `<tr><td class="label-cell">${k}</td><td class="val-cell">${v}</td>
+        <td class="${v === 0 ? 'ok-cell' : 'warn-cell'}">${v === 0 ? "[ CLEAN ]" : "[ HAS NULLS ]"}</td></tr>`;
+    }
+    html += `</tbody></table>`;
+  }
+
+  return html;
+}
+
+// ══ ANALYSIS ════════════════════════════════════════════════════════════
+const loaderMsgs = [
+  "&gt; INITIALIZING NEURAL SCAN...",
+  "&gt; PARSING TRANSACTION VECTORS...",
+  "&gt; BUILDING FRAUD GRAPH...",
+  "&gt; RUNNING ISOLATION FOREST...",
+  "&gt; ANALYZING IP REPUTATION...",
+  "&gt; COMPUTING RISK SCORES...",
+  "&gt; CROSS-REFERENCING PATTERNS...",
+  "&gt; FINALIZING THREAT ASSESSMENT..."
+];
+
+let loaderTimer = null, loaderIdx = 0, progress = 0;
+
+function showLoading() {
+  document.getElementById("loadingState").style.display = "block";
+  document.getElementById("statsBar").style.display = "none";
+  loaderIdx = 0; progress = 0;
+  loaderTimer = setInterval(() => {
+    progress = Math.min(progress + Math.random() * 11, 92);
+    document.getElementById("progressFill").style.width = progress + "%";
+    if (Math.random() > 0.55 && loaderIdx < loaderMsgs.length - 1) {
+      loaderIdx++;
+      document.getElementById("loaderMsg").innerHTML = loaderMsgs[loaderIdx];
+    }
+  }, 420);
+}
+
+function hideLoading() {
+  clearInterval(loaderTimer);
+  document.getElementById("progressFill").style.width = "100%";
+  setTimeout(() => { document.getElementById("loadingState").style.display = "none"; }, 350);
+}
+
+async function runAnalysis() {
+  const file = getFile(); if (!file) return;
   const btn = document.getElementById("analyzeBtn");
   btn.disabled = true;
-  btn.innerHTML = '<span>⟳</span> SCANNING...';
-
+  btn.textContent = "[ ⟳ SCANNING... ]";
   showLoading();
 
   try {
-    const res = await fetch(`${backend}/analyze`, { method: "POST", body: createFormData(file) });
+    const res  = await fetch(`${backend}/analyze`, { method:"POST", body: mkFormData(file) });
     const data = await res.json();
-
-    if (data.error) {
-      toast(data.error, "error");
-      hideLoading();
-      return;
-    }
-
+    if (data.error) { toast(data.error, "error"); hideLoading(); return; }
     hideLoading();
-    displayResults(data.suspicious_cards);
-    toast(`Detection complete — ${data.suspicious_cards.length} threats found`, "success");
+    displayResults(data.suspicious_cards || []);
+    document.getElementById("statsBar").style.display = "flex";
+    toast(`Detection complete — ${(data.suspicious_cards||[]).length} threats found`, "success");
   } catch (e) {
     toast("Analysis failed: " + e.message, "error");
     hideLoading();
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<span class="btn-icon">▶</span> RUN DETECTION';
+    btn.textContent = "[ ▶ RUN FRAUD DETECTION ]";
   }
 }
 
 function displayResults(cards) {
-  const statsBar = document.getElementById("statsBar");
-  statsBar.style.display = "flex";
-
   const high = cards.filter(c => c.risk_level === "high").length;
-  const med = cards.filter(c => c.risk_level === "medium").length;
-  const low = cards.filter(c => c.risk_level === "low").length;
+  const med  = cards.filter(c => c.risk_level === "medium").length;
+  const low  = cards.filter(c => c.risk_level === "low").length;
 
-  animateCount("statTotal", cards.length);
-  animateCount("statHigh", high);
-  animateCount("statMed", med);
-  animateCount("statLow", low);
+  countUp("statTotal", cards.length);
+  countUp("statHigh",  high);
+  countUp("statMed",   med);
+  countUp("statLow",   low);
 
   const tbody = document.getElementById("resultBody");
   tbody.innerHTML = "";
 
-  if (cards.length === 0) {
-    tbody.innerHTML = `
-      <tr class="empty-row">
-        <td colspan="6">
-          <div class="empty-state">
-            <span class="empty-icon">◎</span>
-            <p>No suspicious cards detected in this dataset</p>
-          </div>
-        </td>
-      </tr>`;
+  if (!cards.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-cell">&gt;&gt; NO SUSPICIOUS CARDS DETECTED &lt;&lt;</td></tr>`;
     return;
   }
 
   cards.forEach((card, i) => {
-    const level = card.risk_level || "low";
+    const level    = card.risk_level || "low";
     const patterns = card.fraud_patterns || [];
-    const maxScore = 80;
-    const pct = Math.min((card.risk_score / maxScore) * 100, 100);
+    const pct      = Math.min(((card.risk_score || 0) / 80) * 100, 100);
 
-    const row = document.createElement("tr");
-    row.className = `row-${level}`;
-    row.style.animationDelay = `${i * 0.05}s`;
-    row.style.animation = "fadeIn 0.4s ease both";
+    const tr = document.createElement("tr");
+    tr.className = `row-${level}`;
+    tr.style.animation = `fadeIn 0.4s ease ${i * 0.05}s both`;
 
-    row.innerHTML = `
-      <td style="font-family:var(--font-mono);letter-spacing:0.05em">
-        ${maskCard(card.card_number)}
-      </td>
+    tr.innerHTML = `
+      <td style="font-family:var(--font)">${maskCard(card.card_number)}</td>
       <td>${card.transactions}</td>
       <td>${card.unique_ips}</td>
       <td>
         <div class="score-wrap">
-          <span style="font-family:var(--font-mono);min-width:28px">${card.risk_score}</span>
-          <div class="score-bar">
-            <div class="score-fill ${level}" style="width:${pct}%"></div>
-          </div>
+          <span class="score-num">${card.risk_score}</span>
+          <div class="score-bar"><div class="score-fill ${level}" style="width:${pct}%"></div></div>
         </div>
       </td>
       <td><span class="badge badge-${level}">${level.toUpperCase()}</span></td>
-      <td>${patterns.map(p => `<span class="pattern-tag ${p}">${p.replace("_"," ")}</span>`).join("")}</td>
+      <td>${patterns.map(p => `<span class="ptag ${p}">${p.replace(/_/g," ")}</span>`).join("")}</td>
     `;
-    tbody.appendChild(row);
+    tbody.appendChild(tr);
   });
 }
 
 function maskCard(num) {
   const s = String(num);
-  if (s.length <= 4) return s;
-  return "••••" + s.slice(-4);
+  return s.length > 4 ? "••••" + s.slice(-4) : s;
 }
 
-function animateCount(id, target) {
+function countUp(id, target) {
   const el = document.getElementById(id);
-  const start = 0;
-  const duration = 700;
-  const startTime = performance.now();
-  function update(now) {
-    const progress = Math.min((now - startTime) / duration, 1);
-    el.textContent = Math.floor(progress * target);
-    if (progress < 1) requestAnimationFrame(update);
+  const dur = 600, start = performance.now();
+  (function tick(now) {
+    const p = Math.min((now - start) / dur, 1);
+    el.textContent = Math.floor(p * target);
+    if (p < 1) requestAnimationFrame(tick);
     else el.textContent = target;
-  }
-  requestAnimationFrame(update);
+  })(start);
 }
 
-// ========== NETWORK ==========
+// ══ NETWORK GRAPH ════════════════════════════════════════════════════════
+
+// Store graph data globally for node click info
+let graphData = null;
+
 async function generateNetwork() {
-  const file = getFile();
-  if (!file) return;
-
+  const file = getFile(); if (!file) return;
   const btn = event.target.closest("button");
-  btn.disabled = true;
-  btn.innerHTML = '<span>⟳</span> BUILDING...';
-
-  const placeholder = document.getElementById("networkPlaceholder");
-  if (placeholder) placeholder.style.display = "flex";
+  btn.disabled = true; btn.textContent = "[ ⟳ BUILDING GRAPH... ]";
 
   try {
-    const res = await fetch(`${backend}/fraud_network`, { method: "POST", body: createFormData(file) });
+    const res  = await fetch(`${backend}/fraud_network`, { method:"POST", body: mkFormData(file) });
     const data = await res.json();
+    graphData = data;
     renderGraph(data);
-    toast("Fraud network rendered", "success");
+    toast("Network graph rendered", "success");
   } catch (e) {
-    toast("Network generation failed", "error");
+    toast("Network generation failed: " + e.message, "error");
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<span>◈</span> GENERATE GRAPH';
+    btn.textContent = "[ GENERATE NETWORK GRAPH ]";
   }
 }
 
 function renderGraph(data) {
-  const placeholder = document.getElementById("networkPlaceholder");
-  if (placeholder) placeholder.remove();
+  // Remove placeholder
+  const ph = document.getElementById("graphPH");
+  if (ph) ph.remove();
 
-  const nodes = new vis.DataSet(
-    data.nodes.map(n => {
+  // Determine which cards are suspicious (have high risk score)
+  const cardRisks = {};
+  (data.nodes || []).forEach(n => {
+    if (n.type === "card") cardRisks[n.id] = n.risk || 0;
+  });
+
+  const visNodes = new vis.DataSet(
+    (data.nodes || []).map(n => {
       const isCard = n.type === "card";
-      const risk = n.risk || 0;
-      let color = isCard ? "#ff2d55" : "#00b4ff";
-      let size = isCard ? 14 : 10;
+      const risk   = n.risk || 0;
 
-      if (risk > 40) {
-        color = "#ff2d55";
-        size = 20;
-      } else if (risk > 20) {
-        color = "#ffb800";
-        size = 16;
-      } else if (!isCard) {
+      let color, size, shape;
+      if (isCard) {
+        if (risk >= 40)      { color = "#ff2d55"; size = 22; }
+        else if (risk >= 15) { color = "#ffb800"; size = 18; }
+        else                 { color = "#00ff41"; size = 14; }
+        shape = "dot";
+      } else {
+        // IP node
         color = "#00b4ff";
+        size  = 11;
+        shape = "diamond";
       }
+
+      // Label: card nodes show masked number + CARD tag, IP nodes show IP + IP tag
+      const label = isCard
+        ? `${maskCard(n.id)}\n[CARD]`
+        : `${n.id}\n[IP]`;
 
       return {
         id: n.id,
-        label: isCard ? maskCard(n.id) : n.id.slice(0, 12),
+        label,
         color: {
           background: color,
           border: color,
           highlight: { background: "#ffffff", border: color }
         },
-        font: { color: "#c8fff7", size: 10, face: "Share Tech Mono" },
+        font: {
+          color: color,
+          size: 10,
+          face: "Share Tech Mono",
+          multi: false,
+          align: "center"
+        },
         size,
+        shape,
         borderWidth: 1,
-        shadow: { enabled: true, color: color, size: 10 }
+        shadow: { enabled: true, color: color, size: 12, x: 0, y: 0 },
+        // Store extra info for click panel
+        nodeType: n.type,
+        nodeRisk: risk,
+        nodeCluster: n.cluster,
+        originalId: n.id
       };
     })
   );
 
-  const edges = new vis.DataSet(
-    data.edges.map(e => ({
+  const visEdges = new vis.DataSet(
+    (data.edges || []).map(e => ({
       from: e.source,
       to: e.target,
-      color: { color: "#0f3d4a", highlight: "#00ffe1" },
-      width: 1
+      color: { color: "#00ff4133", highlight: "#00ff41", opacity: 0.6 },
+      width: 1,
+      smooth: { type: "dynamic" }
     }))
   );
 
   const options = {
     nodes: { shape: "dot" },
-    edges: { smooth: { type: "dynamic" } },
     physics: {
-      stabilization: { iterations: 150 },
-      barnesHut: { gravitationalConstant: -3000, springLength: 95 }
+      stabilization: { iterations: 120 },
+      barnesHut: { gravitationalConstant: -3000, springLength: 100, damping: 0.15 }
     },
-    interaction: { hover: true, tooltipDelay: 100 },
+    interaction: { hover: true, tooltipDelay: 80 },
     background: { color: "transparent" }
   };
 
-  new vis.Network(
-    document.getElementById("networkGraph"),
-    { nodes, edges },
-    options
-  );
+  const container = document.getElementById("networkGraph");
+  const network   = new vis.Network(container, { nodes: visNodes, edges: visEdges }, options);
+
+  // ── Click event: show node info panel ───────────────────────
+  network.on("click", params => {
+    const nodePanel = document.getElementById("nodeInfoPanel");
+    if (!params.nodes.length) { nodePanel.style.display = "none"; return; }
+
+    const nodeId   = params.nodes[0];
+    const nodeData = visNodes.get(nodeId);
+    if (!nodeData) return;
+
+    const isCard   = nodeData.nodeType === "card";
+    const risk     = nodeData.nodeRisk || 0;
+    const riskLevel = risk >= 40 ? "HIGH" : risk >= 15 ? "MEDIUM" : "LOW";
+    const riskClass = risk >= 40 ? "red"  : risk >= 15 ? "amber"  : "green";
+
+    // Count connections
+    const connectedEdges = visEdges.get().filter(e => e.from === nodeId || e.to === nodeId);
+    const connectedNodes = new Set();
+    connectedEdges.forEach(e => {
+      if (e.from !== nodeId) connectedNodes.add(e.from);
+      if (e.to   !== nodeId) connectedNodes.add(e.to);
+    });
+
+    document.getElementById("nodeInfoBody").innerHTML = `
+      <div class="np-row"><span class="np-key">NODE ID</span><span class="np-val">${nodeData.originalId}</span></div>
+      <div class="np-row"><span class="np-key">NODE TYPE</span><span class="np-val">${isCard ? "CARD NUMBER" : "IP ADDRESS"}</span></div>
+      <div class="np-row"><span class="np-key">RISK SCORE</span><span class="np-val ${riskClass}">${risk.toFixed(1)}</span></div>
+      <div class="np-row"><span class="np-key">THREAT LEVEL</span><span class="np-val ${riskClass}">${riskLevel}</span></div>
+      <div class="np-row"><span class="np-key">CLUSTER ID</span><span class="np-val">${nodeData.nodeCluster ?? "—"}</span></div>
+      <div class="np-row"><span class="np-key">CONNECTIONS</span><span class="np-val">${connectedNodes.size} ${isCard ? "IP address(es)" : "card(s)"}</span></div>
+    `;
+    nodePanel.style.display = "block";
+  });
 }
 
-// ========== METRICS ==========
+// ══ METRICS ═════════════════════════════════════════════════════════════
 async function viewMetrics() {
   try {
-    const res = await fetch(`${backend}/metrics`);
+    const res  = await fetch(`${backend}/metrics`);
     const data = await res.json();
-    document.getElementById("mDatasets").textContent = data.datasets_processed ?? "—";
-    document.getElementById("mTransactions").textContent = data.transactions_processed ?? "—";
+    renderMetrics(data, false);
     toast("Metrics refreshed", "info");
   } catch (e) {
-    toast("Failed to fetch metrics", "error");
+    toast("Failed to fetch metrics: " + e.message, "error");
   }
 }
 
-// Auto-load metrics on startup
-viewMetrics();
+async function viewDashboard() {
+  try {
+    const res  = await fetch(`${backend}/dashboard`);
+    const data = await res.json();
+    renderMetrics(data, true);
+    toast("Dashboard loaded", "info");
+  } catch (e) {
+    toast("Failed to load dashboard: " + e.message, "error");
+  }
+}
+
+function renderMetrics(data, isDash) {
+  const out = document.getElementById("metricsOutput");
+
+  // Cards for key numeric values
+  const entries = Object.entries(data);
+  let cardsHtml = `<div class="metrics-grid">`;
+  entries.forEach(([k, v]) => {
+    const isNum = typeof v === "number";
+    cardsHtml += `
+      <div class="metric-card">
+        <div class="mc-val">${isNum ? v : "—"}</div>
+        <div class="mc-lbl">${k.replace(/_/g," ").toUpperCase()}</div>
+      </div>`;
+  });
+  cardsHtml += `</div>`;
+
+  // Also render a detail table for string fields
+  const strFields = entries.filter(([,v]) => typeof v === "string");
+  let tableHtml = "";
+  if (strFields.length) {
+    tableHtml = `<p class="schema-section-title" style="margin-top:14px">&gt; STATUS FLAGS</p>
+    <table class="info-table">
+      <thead><tr><th>PARAMETER</th><th>VALUE</th></tr></thead><tbody>`;
+    strFields.forEach(([k, v]) => {
+      const isActive = v.toLowerCase() === "active" || v.toLowerCase() === "online";
+      tableHtml += `<tr>
+        <td class="label-cell">${k.replace(/_/g," ").toUpperCase()}</td>
+        <td class="${isActive ? 'ok-cell' : 'val-cell'}">${v.toUpperCase()}${isActive ? " ✓" : ""}</td>
+      </tr>`;
+    });
+    tableHtml += `</tbody></table>`;
+  }
+
+  out.innerHTML = cardsHtml + tableHtml;
+}
+
+// ══ INIT ══════════════════════════════════════════════════════════════════
+viewMetrics(); // auto-load metrics silently on startup
