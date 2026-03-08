@@ -1,54 +1,85 @@
-async function analyze(){
+const backend = "https://card-auth-updated.onrender.com"
+function getFile(){
 const fileInput = document.getElementById("fileInput")
 if(fileInput.files.length === 0){
-alert("Please upload a CSV file")
-return
+alert("Upload dataset first")
+return null
 }
-const file = fileInput.files[0]
+return fileInput.files[0]
+}
+function createFormData(file){
 const formData = new FormData()
 formData.append("file", file)
-document.getElementById("status").innerText = "Analyzing..."
-try{
-const response = await fetch(
-"https://card-auth-updated.onrender.com/analyze",
-{
+return formData
+}
+async function detectSchema(){
+const file = getFile()
+if(!file) return
+const res = await fetch(`${backend}/detect_schema`,{
 method:"POST",
-body:formData
+body:createFormData(file)
+})
+const data = await res.json()
+document.getElementById("schemaOutput").innerText =
+JSON.stringify(data,null,2)
 }
-)
-const data = await response.json()
-displayResults(data)
-}catch(error){
-document.getElementById("status").innerText = "Server error"
+async function datasetInfo(){
+const file = getFile()
+if(!file) return
+const res = await fetch(`${backend}/dataset_info`,{
+method:"POST",
+body:createFormData(file)
+})
+const data = await res.json()
+document.getElementById("schemaOutput").innerText =
+JSON.stringify(data,null,2)
 }
+async function runAnalysis(){
+const file = getFile()
+if(!file) return
+const res = await fetch(`${backend}/analyze`,{
+method:"POST",
+body:createFormData(file)
+})
+const data = await res.json()
+displayResults(data.suspicious_cards)
 }
-function displayResults(data){
-const tableBody = document.querySelector("#resultTable tbody")
-tableBody.innerHTML = ""
-document.getElementById("status").innerText =
-"Total Cards Analyzed: " + data.total_cards_analyzed
-if(data.suspicious_cards.length === 0){
-tableBody.innerHTML =
-"<tr><td colspan='7'>No suspicious cards detected</td></tr>"
-return
-}
-data.suspicious_cards.forEach(card => {
-let row = document.createElement("tr")
-if(card.risk_level === "HIGH"){
-row.className = "high"
-}
-if(card.risk_level === "MEDIUM"){
-row.className = "medium"
-}
+function displayResults(cards){
+const table = document.querySelector("#resultTable tbody")
+table.innerHTML = ""
+cards.forEach(card=>{
+const row = document.createElement("tr")
 row.innerHTML = `
 <td>${card.card_number}</td>
 <td>${card.transactions}</td>
 <td>${card.unique_ips}</td>
-<td>${card.time_span_minutes}</td>
 <td>${card.risk_score}</td>
 <td>${card.risk_level}</td>
-<td>${card.reason}</td>
+<td>${card.fraud_patterns.join(", ")}</td>
 `
-tableBody.appendChild(row)
+table.appendChild(row)
 })
+}
+async function generateNetwork(){
+const file = getFile()
+if(!file) return
+const res = await fetch(`${backend}/fraud_network`,{
+method:"POST",
+body:createFormData(file)
+})
+const data = await res.json()
+document.getElementById("networkOutput").innerText =
+JSON.stringify(data,null,2)
+}
+async function viewMetrics(){
+const res = await fetch(`${backend}/metrics`)
+const data = await res.json()
+document.getElementById("metricsOutput").innerText =
+JSON.stringify(data,null,2)
+}
+async function viewDashboard(){
+const res = await fetch(`${backend}/dashboard`)
+const data = await res.json()
+document.getElementById("metricsOutput").innerText =
+JSON.stringify(data,null,2)
 }
