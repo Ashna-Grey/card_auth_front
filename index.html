@@ -3,209 +3,200 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SENTINEL — Fraud Detection Engine</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<title>SENTINEL // FRAUD DETECTION ENGINE</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<!-- Matrix rain canvas -->
 <canvas id="matrixCanvas"></canvas>
-
-<!-- Scanline overlay -->
 <div class="scanlines"></div>
-
-<!-- Header -->
+<div class="vignette"></div>
+<!-- ══ HEADER ══════════════════════════════════════════════════════════ -->
 <header>
   <div class="header-left">
-    <div class="logo-mark">⬡</div>
-    <div>
-      <h1>SENTINEL</h1>
-      <span class="tagline">Neural Fraud Detection Engine v2.4.1</span>
+    <div class="header-brand">
+      <div class="brand-icon">⬡</div>
+      <div class="brand-text">
+        <div class="brand-title">// &nbsp;SENTINEL &nbsp;//</div>
+        <div class="brand-sub">FRAUD DETECTION ENGINE</div>
+        <div class="brand-tagline">DETECT &nbsp;·&nbsp; ANALYZE &nbsp;·&nbsp; NEUTRALIZE</div>
+      </div>
     </div>
   </div>
   <div class="header-right">
-    <div class="status-pill">
-      <span class="pulse-dot"></span>
-      <span>SYSTEM ONLINE</span>
+    <div class="sys-status">
+      <div class="status-row">
+        <span class="pulse-dot"></span>
+        <span class="status-text">SYSTEM ONLINE</span>
+      </div>
+      <div class="clock-row">
+        <span id="clock" class="clock">00:00:00</span>
+        <span class="clock-tz">SYSTEM TIME [IST]</span>
+      </div>
     </div>
-    <div class="clock" id="clock">00:00:00</div>
   </div>
 </header>
+<!-- ══ NAV ══════════════════════════════════════════════════════════════ -->
+<nav>
+  <div class="nav-inner">
+    <span class="nav-brace">[====</span>
+    <button class="nav-btn active" data-sec="upload"    onclick="showSection('upload')">⬆ INGESTION</button>
+    <button class="nav-btn"        data-sec="schema"    onclick="showSection('schema')">◎ SCHEMA</button>
+    <button class="nav-btn"        data-sec="analysis"  onclick="showSection('analysis')">⬡ ANALYSIS</button>
+    <button class="nav-btn"        data-sec="network"   onclick="showSection('network')">◉ NETWORK</button>
+    <button class="nav-btn"        data-sec="metrics"   onclick="showSection('metrics')">▣ METRICS</button>
+    <span class="nav-brace">====]</span>
+  </div>
+</nav>
 
-<!-- Main grid layout -->
+<!-- ══ MAIN ══════════════════════════════════════════════════════════════ -->
 <main>
 
-  <!-- LEFT COLUMN -->
-  <div class="col-left">
+  <!-- ── UPLOAD ── -->
+  <section class="panel" id="sec-upload">
+    <div class="panel-hdr">
+      <span class="phdr-icon">⬆</span>
+      <span class="phdr-title">DATA INGESTION</span>
+      <span class="phdr-line"></span>
+      <span class="phdr-tag">[ CSV FORMAT ONLY ]</span>
+    </div>
+    <div class="drop-zone" id="dropZone">
+      <pre class="ascii-box">
+  ╔══════════════════════════╗
+  ║   DRAG &amp; DROP  .CSV      ║
+  ║   OR CLICK TO BROWSE     ║
+  ╚══════════════════════════╝</pre>
+      <p class="drop-hint">&gt;&gt; ACCEPTED: card_number · transaction_time · ip_address &lt;&lt;</p>
+      <input type="file" id="fileInput" accept=".csv">
+    </div>
+    <div class="file-info" id="fileInfo" style="display:none">
+      <span class="fi-icon">▣</span>
+      <span class="fi-label">FILE LOADED //</span>
+      <span id="fileName" class="fi-name"></span>
+      <span id="fileSize" class="fi-size"></span>
+      <span class="fi-ok">&nbsp;[ OK ]</span>
+    </div>
+  </section>
 
-    <!-- Upload Panel -->
-    <section class="panel" id="uploadPanel">
-      <div class="panel-header">
-        <span class="panel-icon">⬆</span>
-        <h2>DATA INGESTION</h2>
-        <div class="panel-line"></div>
-      </div>
-      <div class="drop-zone" id="dropZone">
-        <div class="drop-icon">◈</div>
-        <p class="drop-label">DROP DATASET FILE</p>
-        <p class="drop-sub">or click to browse · CSV format</p>
-        <input type="file" id="fileInput" accept=".csv">
-      </div>
-      <div class="file-info" id="fileInfo" style="display:none">
-        <span class="file-icon">▣</span>
-        <span id="fileName">—</span>
-        <span id="fileSize" class="file-size">—</span>
-      </div>
-    </section>
+  <!-- ── SCHEMA ── -->
+  <section class="panel" id="sec-schema" style="display:none">
+    <div class="panel-hdr">
+      <span class="phdr-icon">◎</span>
+      <span class="phdr-title">SCHEMA INSPECTOR</span>
+      <span class="phdr-line"></span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="detectSchema()">[ DETECT SCHEMA ]</button>
+      <button class="btn" onclick="datasetInfo()">[ DATASET INFO ]</button>
+    </div>
+    <div id="schemaOutput" class="output-area">
+      <span class="await">&gt; AWAITING DATASET...</span>
+    </div>
+  </section>
 
-    <!-- Schema Panel -->
-    <section class="panel">
-      <div class="panel-header">
-        <span class="panel-icon">◎</span>
-        <h2>SCHEMA INSPECTOR</h2>
-        <div class="panel-line"></div>
-      </div>
-      <div class="btn-row">
-        <button class="btn btn-outline" onclick="detectSchema()">
-          <span>◈</span> DETECT SCHEMA
-        </button>
-        <button class="btn btn-outline" onclick="datasetInfo()">
-          <span>◉</span> DATASET INFO
-        </button>
-      </div>
-      <pre class="terminal-output" id="schemaOutput"><span class="dim">// awaiting dataset...</span></pre>
-    </section>
+  <!-- ── ANALYSIS ── -->
+  <section class="panel" id="sec-analysis" style="display:none">
+    <div class="panel-hdr">
+      <span class="phdr-icon">⬡</span>
+      <span class="phdr-title">FRAUD ANALYSIS ENGINE</span>
+      <span class="phdr-line"></span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="runAnalysis()" id="analyzeBtn">[ ▶ RUN FRAUD DETECTION ]</button>
+    </div>
 
-    <!-- Metrics Panel -->
-    <section class="panel">
-      <div class="panel-header">
-        <span class="panel-icon">◈</span>
-        <h2>SYSTEM METRICS</h2>
-        <div class="panel-line"></div>
-      </div>
-      <div class="metrics-grid">
-        <div class="metric-card" id="metricDatasets">
-          <div class="metric-value" id="mDatasets">—</div>
-          <div class="metric-label">DATASETS</div>
-        </div>
-        <div class="metric-card" id="metricTxns">
-          <div class="metric-value" id="mTransactions">—</div>
-          <div class="metric-label">TRANSACTIONS</div>
-        </div>
-        <div class="metric-card" id="metricStatus">
-          <div class="metric-value green">ACTIVE</div>
-          <div class="metric-label">STATUS</div>
-        </div>
-      </div>
-      <button class="btn btn-ghost" onclick="viewMetrics()" style="margin-top:12px">
-        <span>⟳</span> REFRESH METRICS
-      </button>
-    </section>
+    <div id="loadingState" style="display:none" class="loading-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <p class="load-msg" id="loaderMsg">&gt; INITIALIZING NEURAL SCAN...</p>
+    </div>
 
-  </div>
+    <div id="statsBar" style="display:none" class="stats-bar">
+      <div class="stat-cell"><div class="stat-num" id="statTotal">0</div><div class="stat-lbl">FLAGGED</div></div>
+      <div class="stat-div">|</div>
+      <div class="stat-cell"><div class="stat-num red" id="statHigh">0</div><div class="stat-lbl">HIGH RISK</div></div>
+      <div class="stat-div">|</div>
+      <div class="stat-cell"><div class="stat-num amber" id="statMed">0</div><div class="stat-lbl">MEDIUM</div></div>
+      <div class="stat-div">|</div>
+      <div class="stat-cell"><div class="stat-num green" id="statLow">0</div><div class="stat-lbl">LOW</div></div>
+    </div>
 
-  <!-- RIGHT COLUMN -->
-  <div class="col-right">
+    <div class="tbl-wrap">
+      <table id="resultTable">
+        <thead>
+          <tr>
+            <th>&gt; CARD #</th>
+            <th>TRANSACTIONS</th>
+            <th>UNIQUE IPs</th>
+            <th>RISK SCORE</th>
+            <th>THREAT LEVEL</th>
+            <th>PATTERNS DETECTED</th>
+          </tr>
+        </thead>
+        <tbody id="resultBody">
+          <tr><td colspan="6" class="empty-cell">&gt;&gt; NO ANALYSIS RUN — UPLOAD DATASET AND RUN DETECTION &lt;&lt;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 
-    <!-- Analysis Panel -->
-    <section class="panel panel-wide">
-      <div class="panel-header">
-        <span class="panel-icon">⬡</span>
-        <h2>FRAUD ANALYSIS ENGINE</h2>
-        <div class="panel-line"></div>
-        <button class="btn btn-primary" onclick="runAnalysis()" id="analyzeBtn">
-          <span class="btn-icon">▶</span> RUN DETECTION
-        </button>
-      </div>
+  <!-- ── NETWORK ── -->
+  <section class="panel" id="sec-network" style="display:none">
+    <div class="panel-hdr">
+      <span class="phdr-icon">◉</span>
+      <span class="phdr-title">FRAUD NETWORK GRAPH</span>
+      <span class="phdr-line"></span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="generateNetwork()">[ GENERATE NETWORK GRAPH ]</button>
+    </div>
 
-      <!-- Stats bar -->
-      <div class="stats-bar" id="statsBar" style="display:none">
-        <div class="stat-item">
-          <span class="stat-val" id="statTotal">0</span>
-          <span class="stat-lbl">TOTAL FLAGGED</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-val red" id="statHigh">0</span>
-          <span class="stat-lbl">HIGH RISK</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-val amber" id="statMed">0</span>
-          <span class="stat-lbl">MEDIUM RISK</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-val green" id="statLow">0</span>
-          <span class="stat-lbl">LOW RISK</span>
-        </div>
-      </div>
+    <div class="graph-legend">
+      <span class="leg-item"><span class="leg-dot" style="background:#ff2d55"></span>CARD · SUSPICIOUS</span>
+      <span class="leg-sep">//</span>
+      <span class="leg-item"><span class="leg-dot" style="background:#00ff41"></span>CARD · CLEAN</span>
+      <span class="leg-sep">//</span>
+      <span class="leg-item"><span class="leg-dot" style="background:#00b4ff"></span>IP ADDRESS</span>
+      <span class="leg-sep">//</span>
+      <span class="leg-item"><span class="leg-dot" style="background:#ffb800"></span>HIGH RISK</span>
+      <span class="leg-sep">//</span>
+      <span class="leg-item"><span class="leg-line"></span>TRANSACTION LINK</span>
+    </div>
 
-      <!-- Loading state -->
-      <div class="loading-state" id="loadingState" style="display:none">
-        <div class="loader-ring"></div>
-        <p class="loader-text" id="loaderText">INITIALIZING NEURAL SCAN...</p>
-        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-      </div>
-
-      <!-- Results table -->
-      <div class="table-wrap" id="tableWrap">
-        <table id="resultTable">
-          <thead>
-            <tr>
-              <th>CARD NUMBER</th>
-              <th>TXN COUNT</th>
-              <th>UNIQUE IPs</th>
-              <th>RISK SCORE</th>
-              <th>THREAT LEVEL</th>
-              <th>PATTERNS DETECTED</th>
-            </tr>
-          </thead>
-          <tbody id="resultBody">
-            <tr class="empty-row">
-              <td colspan="6">
-                <div class="empty-state">
-                  <span class="empty-icon">◎</span>
-                  <p>No analysis run yet — upload a dataset and run detection</p>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Network Panel -->
-    <section class="panel panel-wide">
-      <div class="panel-header">
-        <span class="panel-icon">◉</span>
-        <h2>FRAUD NETWORK GRAPH</h2>
-        <div class="panel-line"></div>
-        <button class="btn btn-secondary" onclick="generateNetwork()">
-          <span>◈</span> GENERATE GRAPH
-        </button>
-      </div>
-      <div class="network-legend">
-        <span class="legend-item"><span class="legend-dot red"></span>Card Node</span>
-        <span class="legend-item"><span class="legend-dot blue"></span>IP Node</span>
-        <span class="legend-item"><span class="legend-dot amber"></span>High Risk</span>
-      </div>
+    <div class="graph-outer">
       <div id="networkGraph">
-        <div class="network-placeholder" id="networkPlaceholder">
-          <div class="ph-icon">◉</div>
-          <p>Graph renders after detection</p>
+        <div class="graph-placeholder" id="graphPH">
+          <span class="gph-icon">◉</span>
+          <span class="gph-text">&gt; GRAPH RENDERS AFTER DETECTION &lt;</span>
         </div>
       </div>
-    </section>
+    </div>
 
-  </div>
+    <div id="nodeInfoPanel" class="node-panel" style="display:none">
+      <div class="np-header">&gt; NODE SELECTED</div>
+      <div id="nodeInfoBody" class="np-body"></div>
+    </div>
+  </section>
+
+  <!-- ── METRICS ── -->
+  <section class="panel" id="sec-metrics" style="display:none">
+    <div class="panel-hdr">
+      <span class="phdr-icon">▣</span>
+      <span class="phdr-title">SYSTEM DASHBOARD</span>
+      <span class="phdr-line"></span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="viewMetrics()">[ REFRESH METRICS ]</button>
+      <button class="btn" onclick="viewDashboard()">[ DASHBOARD ]</button>
+    </div>
+    <div id="metricsOutput" class="output-area">
+      <span class="await">&gt; CLICK REFRESH TO LOAD...</span>
+    </div>
+  </section>
+
 </main>
 
-<!-- Toast container -->
 <div id="toastContainer"></div>
-
 <script src="script.js"></script>
 </body>
 </html>
