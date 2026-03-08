@@ -46,3 +46,10 @@ background:#ffdddd;
 .medium{
 background:#fff0cc;
 }
+#networkGraph{
+width:90%;
+height:500px;
+border:1px solid #ccc;
+margin:20px auto;
+background:white;
+}
