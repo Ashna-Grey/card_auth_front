@@ -3,6 +3,7 @@
 <head>
 <title>Fraud Detection Engine</title>
 <link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 </head>
 <body>
 <h1>Fraud Detection Engine</h1>
@@ -34,9 +35,9 @@
 </table>
 </div>
 <div class="section">
-<h3>Fraud Network</h3>
-<button onclick="generateNetwork()">Generate Network</button>
-<pre id="networkOutput"></pre>
+<h3>Fraud Network Visualization</h3>
+<button onclick="generateNetwork()">Generate Network Graph</button>
+<div id="networkGraph"></div>
 </div>
 <div class="section">
 <h3>System Dashboard</h3>
