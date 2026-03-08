@@ -68,8 +68,37 @@ method:"POST",
 body:createFormData(file)
 })
 const data = await res.json()
-document.getElementById("networkOutput").innerText =
-JSON.stringify(data,null,2)
+renderGraph(data)
+}
+function renderGraph(data){
+const container = document.getElementById("networkGraph")
+const nodes = new vis.DataSet(
+data.nodes.map(n => ({
+id:n.id,
+label:n.id,
+color: n.type === "card" ? "#ff7675" : "#74b9ff"
+}))
+)
+const edges = new vis.DataSet(
+data.edges.map(e => ({
+from:e.source,
+to:e.target
+}))
+)
+const graphData = {
+nodes:nodes,
+edges:edges
+}
+const options = {
+nodes:{
+shape:"dot",
+size:15
+},
+physics:{
+enabled:true
+}
+}
+new vis.Network(container, graphData, options)
 }
 async function viewMetrics(){
 const res = await fetch(`${backend}/metrics`)
