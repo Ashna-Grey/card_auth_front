@@ -1,34 +1,49 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Card Fraud Detection</title>
+<title>Fraud Detection Engine</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>Card Fraud Detection System</h1>
-<div class="upload-box">
-<label>Upload Transaction Dataset (CSV)</label>
-<input type="file" id="fileInput" accept=".csv">
-<button onclick="analyze()">Analyze Transactions</button>
+<h1>Fraud Detection Engine</h1>
+<div class="section">
+<h3>Upload Dataset</h3>
+<input type="file" id="fileInput">
 </div>
-<div id="status"></div>
-<h2>Results</h2>
+<div class="section">
+<h3>Dataset Tools</h3>
+<button onclick="detectSchema()">Detect Schema</button>
+<button onclick="datasetInfo()">Dataset Info</button>
+<pre id="schemaOutput"></pre>
+</div>
+<div class="section">
+<h3>Fraud Analysis</h3>
+<button onclick="runAnalysis()">Run Fraud Detection</button>
 <table id="resultTable">
 <thead>
 <tr>
-<th>Card Number</th>
+<th>Card</th>
 <th>Transactions</th>
-<th>Unique IPs</th>
-<th>Time Span (minutes)</th>
+<th>IPs</th>
 <th>Risk Score</th>
 <th>Risk Level</th>
-<th>Reason</th>
+<th>Fraud Patterns</th>
 </tr>
 </thead>
 <tbody></tbody>
 </table>
+</div>
+<div class="section">
+<h3>Fraud Network</h3>
+<button onclick="generateNetwork()">Generate Network</button>
+<pre id="networkOutput"></pre>
+</div>
+<div class="section">
+<h3>System Dashboard</h3>
+<button onclick="viewMetrics()">Metrics</button>
+<button onclick="viewDashboard()">Dashboard</button>
+<pre id="metricsOutput"></pre>
+</div>
 <script src="script.js"></script>
-
 </body>
 </html>
